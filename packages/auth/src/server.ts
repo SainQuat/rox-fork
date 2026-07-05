@@ -6,7 +6,6 @@ import { members, userAttribution } from "@rox/db/schema";
 import type { sessions } from "@rox/db/schema/auth";
 import * as authSchema from "@rox/db/schema/auth";
 import { seedDefaultStatuses } from "@rox/db/seed-default-statuses";
-import { seedDemoProject } from "@rox/db/seed-demo-project";
 import { EmailVerificationEmail } from "@rox/email/emails/email-verification";
 import { MemberAddedEmail } from "@rox/email/emails/member-added";
 import { MemberRemovedEmail } from "@rox/email/emails/member-removed";
