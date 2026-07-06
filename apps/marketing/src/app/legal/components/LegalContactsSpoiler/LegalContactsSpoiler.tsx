@@ -41,7 +41,7 @@ export function LegalContactsSpoiler() {
 					</div>
 					<div>
 						<p className="text-xs uppercase tracking-wider text-muted-foreground/70">
-							ОГРН
+							ОГРНИП
 						</p>
 						<p className="mt-1 font-mono text-foreground">326774600421177</p>
 					</div>
