@@ -42,7 +42,7 @@ const INITIAL_FORM = {
 	confirmPassword: "",
 };
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
 const MIN_BIRTH_DATE = new Date(1900, 0, 1);
 const BIRTH_MONTHS = Array.from({ length: 12 }, (_, index) => ({
 	value: String(index),
@@ -122,6 +122,43 @@ function formatBirthDateLabel(value: string): string {
 	}).format(date);
 }
 
+function getPasswordRequirements(password: string) {
+	return [
+		{
+			label: "Минимум 8 символов",
+			isMet: password.length >= 8,
+		},
+		{
+			label: "Есть заглавная буква",
+			isMet: /[A-ZА-ЯЁ]/.test(password),
+		},
+		{
+			label: "Есть цифра",
+			isMet: /\d/.test(password),
+		},
+		{
+			label: "Есть спецсимвол",
+			isMet: /[^A-Za-zА-Яа-яЁё0-9]/.test(password),
+		},
+	];
+}
+
+function getEmailRequirements(email: string) {
+	const value = email.trim();
+	const domain = value.split("@")[1] ?? "";
+
+	return [
+		{
+			label: "Есть @",
+			isMet: value.includes("@"),
+		},
+		{
+			label: "Есть домен после @",
+			isMet: /^[^\s@]+\.[A-Za-z]{2,}$/.test(domain),
+		},
+	];
+}
+
 function getResponseMessage(
 	payload: RegisterEmailResponse,
 	fallback: string,
@@ -156,6 +193,11 @@ export function EmailRegistrationForm() {
 	const selectedBirthDate = parseBirthDate(form.birthDate);
 	const birthYears = getBirthYears();
 	const maxBirthDate = getMaxBirthDate();
+	const emailRequirements = getEmailRequirements(form.email);
+	const passwordRequirements = getPasswordRequirements(form.password);
+	const isPasswordValid = passwordRequirements.every(({ isMet }) => isMet);
+	const hasConfirmPassword = form.confirmPassword.length > 0;
+	const doPasswordsMatch = form.password === form.confirmPassword;
 
 	const updateBirthDateMonth = (date: Date) => {
 		setBirthDateMonth(clampBirthDateMonth(date));
@@ -216,7 +258,9 @@ export function EmailRegistrationForm() {
 
 		if (!EMAIL_PATTERN.test(normalizedEmail)) {
 			setSubmissionState("error");
-			setMessage("Укажите корректный email.");
+			setMessage(
+				"Укажите корректный email с доменом, например name@example.ru.",
+			);
 			return;
 		}
 
@@ -232,7 +276,13 @@ export function EmailRegistrationForm() {
 			return;
 		}
 
-		if (form.password !== form.confirmPassword) {
+		if (!isPasswordValid) {
+			setSubmissionState("error");
+			setMessage("Пароль не соответствует требованиям.");
+			return;
+		}
+
+		if (!doPasswordsMatch) {
 			setSubmissionState("error");
 			setMessage("Пароли не совпадают.");
 			return;
@@ -321,9 +371,6 @@ export function EmailRegistrationForm() {
 					value={form.handle}
 					onChange={(event) => updateField("handle", event.target.value)}
 				/>
-				<p className="text-muted-foreground text-xs">
-					Публичный адрес профиля без @, латиница, цифры или подчеркивание.
-				</p>
 				{handleMessage && (
 					<p
 						className={
@@ -346,10 +393,24 @@ export function EmailRegistrationForm() {
 					autoComplete="email"
 					placeholder="you@example.com"
 					required
-					pattern="[^\s@]+@[^\s@]+\.[^\s@]+"
+					pattern="[^\s@]+@[^\s@]+\.[A-Za-z]{2,}"
 					value={form.email}
 					onChange={(event) => updateField("email", event.target.value)}
 				/>
+				<div className="grid gap-1">
+					{emailRequirements.map((requirement) => (
+						<p
+							key={requirement.label}
+							className={
+								requirement.isMet
+									? "text-emerald-300 text-xs"
+									: "text-destructive text-xs"
+							}
+						>
+							{requirement.isMet ? "✓" : "×"} {requirement.label}
+						</p>
+					))}
+				</div>
 			</div>
 
 			<div className="grid gap-4 sm:grid-cols-2">
@@ -565,6 +626,20 @@ export function EmailRegistrationForm() {
 					value={form.password}
 					onChange={(event) => updateField("password", event.target.value)}
 				/>
+				<div className="grid gap-1">
+					{passwordRequirements.map((requirement) => (
+						<p
+							key={requirement.label}
+							className={
+								requirement.isMet
+									? "text-emerald-300 text-xs"
+									: "text-destructive text-xs"
+							}
+						>
+							{requirement.isMet ? "✓" : "×"} {requirement.label}
+						</p>
+					))}
+				</div>
 			</div>
 
 			<div className="grid gap-2">
@@ -581,6 +656,17 @@ export function EmailRegistrationForm() {
 						updateField("confirmPassword", event.target.value)
 					}
 				/>
+				{hasConfirmPassword && (
+					<p
+						className={
+							doPasswordsMatch
+								? "text-emerald-300 text-xs"
+								: "text-destructive text-xs"
+						}
+					>
+						{doPasswordsMatch ? "Пароли совпадают." : "Пароли не совпадают."}
+					</p>
+				)}
 			</div>
 
 			<Button

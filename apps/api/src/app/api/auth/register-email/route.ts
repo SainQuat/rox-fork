@@ -14,11 +14,24 @@ import { checkRegisterEmailRateLimit } from "./rate-limit";
 export const dynamic = "force-dynamic";
 
 const genderSchema = z.enum(["male", "female"]);
+const emailSchema = z
+	.email()
+	.regex(
+		/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/,
+		"Укажите корректный email с доменом, например name@example.ru.",
+	)
+	.transform((value) => value.toLowerCase());
+const passwordSchema = z
+	.string()
+	.min(8, "Пароль должен быть не короче 8 символов")
+	.regex(/[A-ZА-ЯЁ]/, "Пароль должен содержать заглавную букву")
+	.regex(/\d/, "Пароль должен содержать цифру")
+	.regex(/[^A-Za-zА-Яа-яЁё0-9]/, "Пароль должен содержать спецсимвол");
 
 const registerEmailSchema = z
 	.object({
 		handle: z.string().trim().min(1),
-		email: z.email().transform((value) => value.toLowerCase()),
+		email: emailSchema,
 		birthDate: z
 			.string()
 			.regex(
@@ -26,7 +39,7 @@ const registerEmailSchema = z
 				"Дата рождения должна быть в формате YYYY-MM-DD",
 			),
 		gender: genderSchema,
-		password: z.string().min(8, "Пароль должен быть не короче 8 символов"),
+		password: passwordSchema,
 		confirmPassword: z.string(),
 	})
 	.refine((data) => data.password === data.confirmPassword, {
